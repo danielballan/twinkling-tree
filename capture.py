@@ -30,11 +30,10 @@ def capture_loop(camera, filepaths):
     """
     Consume an iterable of filepaths, capturing an image for each.
     """
-    log("Capture loop started. Enter filepaths one line at a time. Use Ctrl+D to finish.")
+    print("Enter filepaths one line at a time. Use Ctrl+D to finish.")
     for filepath in filepaths:
-        print('filepath', repr(filepath), type(filepath))
         camera.capture(filepath)
-        log(f"Captured {filepath}")
+        print(f"Captured {filepath}")
 
 
 def main():
