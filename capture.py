@@ -5,7 +5,7 @@ import picamera
 
 
 def log(message):
-    print(message, file=sys.stderr)
+    print(message, file=sys.stderr, flush=True)
 
 
 def setup(camera):
@@ -30,10 +30,10 @@ def capture_loop(camera, filepaths):
     """
     Consume an iterable of filepaths, capturing an image for each.
     """
-    print("Enter filepaths one line at a time. Use Ctrl+D to finish.")
+    print("Enter filepaths one line at a time. Use Ctrl+D to finish.", flush=True)
     for filepath in filepaths:
         camera.capture(filepath)
-        print(f"Captured {filepath}")
+        print(f"Captured {filepath}", flush=True)
 
 
 def main():
