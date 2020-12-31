@@ -9,6 +9,7 @@ PIXEL_COUNT = 50
 ON = (255, 0, 0)
 OFF = (0, 0, 0)
 CAMERA_HOST = "pi2"
+TARGET_DIRECTORY = "images"
 
 
 def log(*message):
@@ -34,13 +35,13 @@ def main():
     try:
         pixels = neopixel.NeoPixel(board.D18, PIXEL_COUNT, brightness=1, auto_write=False)
         pixels.fill(OFF)
-        for i in range(3):
+        for i in range(PIXEL_COUNT):
             pixels[i - 1] = OFF
             pixels[i] = ON
             pixels.show()
             time.sleep(0.05)
             log(f"Requesting image {i}")
-            process.stdin.write(f"light-{i}.png\n".encode())
+            process.stdin.write(f"{TARGET_DIRECTORY}/pixel_{i:03}.png\n".encode())
             process.stdin.flush()
             log("received from ssh", process.stdout.readline())
             log(f"Completed image {i}")
