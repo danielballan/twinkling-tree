@@ -60,6 +60,9 @@ async def main():
     try:
         while True:
             await rainbow_cycle(0.001)  # rainbow cycle with 1ms delay per step
+    except KeyboardInterrupt:
+        # Silently clean up and exit.
+        pass
     finally:
         pixels.fill((0, 0, 0))
         await pixels.ashow()
