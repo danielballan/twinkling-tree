@@ -1,2 +1,3 @@
 venv/
 picamera-key
+__pycache__/
