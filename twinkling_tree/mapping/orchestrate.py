@@ -20,12 +20,12 @@ def main():
     process = subprocess.Popen(
         [
             "ssh",
-             "-i",
-             "picamera-key",
-             "-t",  # unbuffered output
-             f"pi@{CAMERA_HOST}",
-             "twinkling-tree/venv/bin/python",
-             "twinkling-tree/capture.py"
+            "-i",
+            "picamera-key",
+            "-t",  # unbuffered output
+            f"pi@{CAMERA_HOST}",
+            "twinkling-tree/venv/bin/python",
+            "twinkling-tree/capture.py",
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -33,7 +33,9 @@ def main():
     )
     print("received", process.stdout.readline())  # Block until ready.
     try:
-        pixels = neopixel.NeoPixel(board.D18, PIXEL_COUNT, brightness=1, auto_write=False)
+        pixels = neopixel.NeoPixel(
+            board.D18, PIXEL_COUNT, brightness=1, auto_write=False
+        )
         pixels.fill(OFF)
         for i in range(PIXEL_COUNT):
             pixels[i - 1] = OFF

@@ -45,7 +45,9 @@ async def infinite_rainbow_cycle(pixels, wait):
 async def main():
     pixels = get_pixels()
     try:
-        await infinite_rainbow_cycle(pixels, 0.001)  # rainbow cycle with 1ms delay per step
+        await infinite_rainbow_cycle(
+            pixels, 0.001
+        )  # rainbow cycle with 1ms delay per step
     except KeyboardInterrupt:
         # Silently clean up and exit.
         pass
