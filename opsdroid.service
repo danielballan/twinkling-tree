@@ -1,0 +1,14 @@
+[Unit]
+Description=opsdroid chatbot service
+Documentation=https://docs.opsdroid.dev/en/stable/
+
+[Service]
+WorkingDirectory=/home/pi/twinkling-tree
+ExecStart=/home/pi/venv/bin/opsdroid start
+User=root
+Type=simple
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
