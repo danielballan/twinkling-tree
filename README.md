@@ -66,3 +66,9 @@ sudo systemctl start opsdroid.service
 sudo systemctl enable opsdroid.service
 sudo systemctl status opsdroid.service
 ```
+
+Tail logs like
+
+```
+sudo journalctl -f -u opsdroid.service
+```
