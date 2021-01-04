@@ -1,3 +1,14 @@
+# Twinkling Tree
+
+This is used to control individually-controllable RGB LED lights on my tree. It
+has a couple aspects, which might be useful _a la carte_ in other projects.
+
+* Set the lights to a color or set of colors by providing a color name from the
+ This  [XKCD color survey](https://blog.xkcd.com/2010/05/03/color-survey-results/).
+* Run a variety of nice-looking dynamic patterns.
+* Control the lights via a variety of different chat clients, including text
+  messages, using the included configuration for [opsdroid](http://opsdroid.dev/).
+
 ## Setup
 
 ```
@@ -8,7 +19,7 @@ python -m pip install -r requirements.txt
 python -m pip install -e .
 ```
 
-## Run examples
+## Run examples from Python
 
 Must run as root for access to NeoPixels.
 
@@ -18,7 +29,7 @@ source venv/bin/activate
 python -m twinkling_tree.stunts.rainbow
 ```
 
-## Optional: Use opsdroid
+## Optional: Use opsdroid to run examples from chat clients
 
 Configure
 
