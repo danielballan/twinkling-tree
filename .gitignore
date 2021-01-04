@@ -3,3 +3,4 @@ picamera-key
 __pycache__/
 *.egg-info/
 configuration.yaml
+*.swp

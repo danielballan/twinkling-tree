@@ -37,3 +37,22 @@ def get_pixels():
     return AsyncNeoPixel(
         pixel_pin, num_pixels, brightness=1, auto_write=False, pixel_order=ORDER
     )
+
+
+def hex_to_channels(hex_code, order):
+    """
+    Convert hex code to (R, G, B) or (G, R, B) or (R, G, B, W).
+
+    >>> hex_to_channels("#ff0000", "RGB")
+    (255, 0, 0)
+    """
+    hex_value = hex_code.lstrip("#")
+    r, g, b = tuple(int(hex_value[i:i + 2], 16) for i in (0, 2, 4))
+    if order == neopixel.RGB:
+        return r, g, b
+    elif order == neopixel.GRB:
+        return g, r, b
+    elif order == neopixel.RGBW:
+        return r, g, b, 0
+    else:
+        raise ValueError("order is {order}; expected 'RGB' or 'GRB' or 'RGBW'")
