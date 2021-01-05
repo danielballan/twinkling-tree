@@ -4,7 +4,9 @@ from opsdroid.skill import Skill
 from opsdroid.matchers import match_regex
 
 from twinkling_tree.stunts.rainbow import infinite_rainbow_cycle
-from twinkling_tree.utils import get_pixels
+from twinkling_tree.stunts.color import randomly_fill
+from twinkling_tree.utils import hex_to_channels, get_pixels
+from twinkling_tree.color_data import XKCD_COLORS
 
 
 async def dark(pixels):
@@ -42,3 +44,32 @@ class Rainbow(Skill):
     async def dark(self, message):
         await message.respond("OK, going dark")
         await self._controller.schedule(dark(self._pixels))
+
+    @match_regex(r'color (?P<color_terms>.*)', case_sensitive=False)
+    async def color(self, message):
+        order = self._pixels.byteorder
+        color_terms_raw = message.entities["color_terms"]["value"].lower().strip()
+        try:
+            # First try to interpet this as one (possibly compound-word) valid term.
+            XKCD_COLORS[f"xkcd:{color_terms_raw}"]
+            color_terms = [color_terms_raw]
+        except KeyError:
+            # Interpret this multiple as comma- or space- separated terms.
+            # Accept comma-separated terms to support compound words like sea
+            # green and light blue. Also accept space-separated for usability.
+            if "," in color_terms_raw:
+                color_terms = [term.strip() for term in color_terms_raw.split(",")]
+            else:
+                color_terms = color_terms_raw.split()
+        colors = []
+        for color_term in color_terms:
+            try:
+                hex_code = XKCD_COLORS[f"xkcd:{color_term}"]
+            except KeyError:
+                await message.respond(
+                    f"I do not know the color {color_term}. Try something else if you like.")
+                return
+            channels = hex_to_channels(hex_code, order) # RGB or GRB or RGBW depending on pixels
+            colors.append(channels)
+        await message.respond('OK, coloring')
+        await self._controller.schedule(randomly_fill(self._pixels, colors))
