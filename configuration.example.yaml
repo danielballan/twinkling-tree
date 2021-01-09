@@ -7,5 +7,5 @@ connectors:
       - "..."
       - "..."
 skills:
-  rainbow:
+  twinkling-tree:
     path: skills.py
