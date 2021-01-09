@@ -64,12 +64,17 @@ class Rainbow(Skill):
         colors = []
         for color_term in color_terms:
             try:
-                hex_code = XKCD_COLORS[f"xkcd:{color_term}"]
+                if color_term.startswith("#"):
+                    # Interpret the color term as a hex code.
+                    channels = hex_to_channels(color_term, order)
+                else:
+                    # Interpret it as a color name and look up the hex code.
+                    hex_code = XKCD_COLORS[f"xkcd:{color_term}"]
+                    channels = hex_to_channels(hex_code, order)
             except KeyError:
                 await message.respond(
                     f"I do not know the color {color_term}. Try something else if you like.")
                 return
-            channels = hex_to_channels(hex_code, order) # RGB or GRB or RGBW depending on pixels
             colors.append(channels)
         await message.respond('OK, coloring')
         await self._controller.schedule(randomly_fill(self._pixels, colors))
