@@ -3,7 +3,6 @@ import itertools
 import random
 
 import neopixel
-import toolz
 
 from ..utils import get_pixels
 
@@ -20,17 +19,18 @@ async def randomly_fill(pixels, colors):
     colors = list(colors)
     num_pixels = len(pixels)
     indexes = list(range(num_pixels))
-    random.shuffle(indexes)  # in place
-    partitioned = toolz.partition_all(num_pixels // len(colors), indexes)
-    # Paint each partition with one color. If the pixels do not partition
-    # evenly into equal sizes, paint the leftovers with the last color.
-    for color, partition in itertools.zip_longest(colors, partitioned, fillvalue=colors[-1]):
-        for index in partition:
-            pixels[index] = color
+    for index in indexes:
+        pixels[index] = random.choice(colors)
     await pixels.ashow()
-    # Block until cancelled.
     while True:
-        await asyncio.sleep(10)
+        index = random.choice(indexes)
+        before = pixels[index]
+        candidates = colors.copy()
+        if len(colors) > 1:
+            candidates.remove(tuple(pixels[index]))
+        pixels[index] = random.choice(candidates)
+        after = pixels[index]
+        await pixels.ashow()
 
 
 async def main():
