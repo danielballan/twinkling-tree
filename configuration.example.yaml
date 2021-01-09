@@ -1,4 +1,9 @@
 connectors:
+  sms:
+    account_sid: "..."
+    auth_token: "..."
+    phone_number: "+1..."
+    is_trial: false
   telegram:
     update-interval: 0.5
     token: "..."
