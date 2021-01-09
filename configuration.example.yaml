@@ -1,8 +1,11 @@
 connectors:
-  gitter:
-    room-id: "<room id>"
-    token: "<token>"
-
+  telegram:
+    update-interval: 0.5
+    token: "..."
+    default-user: "..."
+    whitelisted-users:
+      - "..."
+      - "..."
 skills:
   rainbow:
     path: skills.py
