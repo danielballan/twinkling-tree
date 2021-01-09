@@ -35,6 +35,9 @@ class Rainbow(Skill):
         self._controller = Controller()
         self._pixels = get_pixels()
 
+    def _channels_from_name(self, color_name):
+        return hex_to_channels(XKCD_COLORS[f"xkcd:{color_name}"], self._pixels.byteorder)
+
     @match_regex(r"rainbow", case_sensitive=False)
     async def rainbow(self, message):
         await self._controller.schedule(infinite_rainbow_cycle(self._pixels, 0.001))
@@ -44,6 +47,36 @@ class Rainbow(Skill):
     async def dark(self, message):
         await message.respond("OK, going dark")
         await self._controller.schedule(dark(self._pixels))
+
+    @match_regex(r"jedi", case_sensitive=False)
+    async def jedi(self, message):
+        await message.respond("This is the way.")
+        colors = [self._channels_from_name("electric blue")]
+        await self._controller.schedule(randomly_fill(self._pixels, colors))
+
+    @match_regex(r"sith", case_sensitive=False)
+    async def sith(self, message):
+        await message.respond("Come to the dark side.")
+        colors = [self._channels_from_name("blood red")]
+        await self._controller.schedule(randomly_fill(self._pixels, colors))
+
+    @match_regex(r"classic", case_sensitive=False)
+    async def classic(self, message):
+        await message.respond("OK, here's a classic Christmas tree.")
+        CLASSIC_COLORS = [
+            (255, 0, 0),
+            (100, 100, 0),
+            (0, 255, 0),
+            (0, 0, 255),
+            (200, 0, 200),
+        ]
+        await self._controller.schedule(randomly_fill(self._pixels, CLASSIC_COLORS))
+
+    @match_regex(r"christmas", case_sensitive=False)
+    async def christmas(self, message):
+        await message.respond("\N{Christmas Tree}")
+        colors = [self._channels_from_name(name) for name in ("blood red", "pine green", "ivory")]
+        await self._controller.schedule(randomly_fill(self._pixels, colors))
 
     @match_regex(r'color (?P<color_terms>.*)', case_sensitive=False)
     async def color(self, message):
