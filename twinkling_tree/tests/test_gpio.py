@@ -2,7 +2,7 @@ import RPi.GPIO as GPIO
 import sys
 
 
-def interactively_flip_pin(pin)
+def interactively_flip_pin(pin):
     print(f"Controlling GPIO pin {pin}")
     GPIO.setmode(GPIO.BOARD)
     GPIO.setup(pin, GPIO.OUT, initial=0)

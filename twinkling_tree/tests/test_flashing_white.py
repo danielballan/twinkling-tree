@@ -7,6 +7,7 @@ PIXEL_COUNT = 100
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+
 def main():
     try:
         pixels = neopixel.NeoPixel(board.D18, PIXEL_COUNT, brightness=1, auto_write=False)

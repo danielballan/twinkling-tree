@@ -1,8 +1,5 @@
 import asyncio
-import itertools
 import random
-
-import neopixel
 
 from ..utils import get_pixels
 

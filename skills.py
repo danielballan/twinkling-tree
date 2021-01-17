@@ -125,7 +125,7 @@ class Rainbow(Skill):
 
     @match_regex(r'reboot', case_sensitive=False)
     @constrain_users(['danielballan'])
-    async def shutdown(self, message):
+    async def reboot(self, message):
         await message.respond("Going dark and rebooting.")
         await self._controller.schedule(dark(self._pixels))
         await asyncio.sleep(2)
