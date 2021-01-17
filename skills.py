@@ -1,10 +1,15 @@
 import asyncio
+import subprocess
 
+import opsdroid
+from opsdroid.events import Message
+from opsdroid.constraints import constrain_users
+from opsdroid.matchers import match_crontab, match_regex
 from opsdroid.skill import Skill
-from opsdroid.matchers import match_regex
 
 from twinkling_tree.stunts.rainbow import infinite_rainbow_cycle
 from twinkling_tree.stunts.color import randomly_fill
+from twinkling_tree.stunts.string_number import string_number
 from twinkling_tree.utils import hex_to_channels, get_pixels
 from twinkling_tree.color_data import XKCD_COLORS
 
@@ -111,3 +116,30 @@ class Rainbow(Skill):
             colors.append(channels)
         await message.respond('OK, coloring')
         await self._controller.schedule(randomly_fill(self._pixels, colors))
+
+    @match_regex(r'string (?P<num>\d)', case_sensitive=False)
+    async def string_number(self, message):
+        n = int(message.entities["num"]["value"])
+        await self._controller.schedule(string_number(self._pixels, n))
+        await message.respond(f"Illuminating String {n}")
+
+    @match_regex(r'reboot', case_sensitive=False)
+    @constrain_users(['danielballan'])
+    async def shutdown(self, message):
+        await message.respond("Going dark and rebooting.")
+        await self._controller.schedule(dark(self._pixels))
+        await asyncio.sleep(2)
+        subprocess.Popen(["reboot", "now"])
+
+    @match_regex(r'shutdown', case_sensitive=False)
+    @constrain_users(['danielballan'])
+    async def shutdown(self, message):
+        await message.respond("Going dark and shutting down. Power-cycle to reboot.")
+        await self._controller.schedule(dark(self._pixels))
+        await asyncio.sleep(2)
+        subprocess.Popen(["shutdown", "now"])
+
+    @match_crontab('30 22 * * *', timezone="America/New York")
+    async def timed_goodnight(self, event):
+        await opsdroid.send(Message(text="Going dark for the night \N{Crescent Moon}"))
+        await self._controller.schedule(dark(self._pixels))
