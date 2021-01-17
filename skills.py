@@ -117,7 +117,7 @@ class Rainbow(Skill):
         await message.respond('OK, coloring')
         await self._controller.schedule(randomly_fill(self._pixels, colors))
 
-    @match_regex(r'string (?P<num>\d)', case_sensitive=False)
+    @match_regex(r'string (?P<num>\d+)', case_sensitive=False)
     async def string_number(self, message):
         n = int(message.entities["num"]["value"])
         await self._controller.schedule(string_number(self._pixels, n))
