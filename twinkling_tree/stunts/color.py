@@ -10,6 +10,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 PURPLE = (200, 0, 200)
 CLASSIC_CHRISTMAS = [RED, ORANGE, GREEN, BLUE]
+BATCH_SIZE = 10  # number to change in a single write
 
 
 async def randomly_fill(pixels, colors):
@@ -20,13 +21,12 @@ async def randomly_fill(pixels, colors):
         pixels[index] = random.choice(colors)
     await pixels.ashow()
     while True:
-        index = random.choice(indexes)
-        before = pixels[index]
-        candidates = colors.copy()
-        if len(colors) > 1:
-            candidates.remove(tuple(pixels[index]))
-        pixels[index] = random.choice(candidates)
-        after = pixels[index]
+        for _ in range(BATCH_SIZE):
+            index = random.choice(indexes)
+            candidates = colors.copy()
+            if len(colors) > 1:
+                candidates.remove(tuple(pixels[index]))
+            pixels[index] = random.choice(candidates)
         await pixels.ashow()
 
 
