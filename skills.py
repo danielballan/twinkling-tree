@@ -1,11 +1,10 @@
 import asyncio
 import subprocess
 
-import opsdroid
-from opsdroid.events import Message
 from opsdroid.constraints import constrain_users
 from opsdroid.matchers import match_crontab, match_regex
 from opsdroid.skill import Skill
+from opsdroid.events import Message
 
 from twinkling_tree.stunts.rainbow import infinite_rainbow_cycle
 from twinkling_tree.stunts.color import randomly_fill
@@ -141,5 +140,6 @@ class Rainbow(Skill):
 
     @match_crontab('30 22 * * *', timezone="America/New York")
     async def timed_goodnight(self, event):
-        await opsdroid.send(Message(text="Going dark for the night \N{Crescent Moon}"))
+        # Importing this at global scope seems to trip at circular import bug at startup.
+        await self.opsdroid.send(Message(text="Going dark for the night \N{Crescent Moon}"))
         await self._controller.schedule(dark(self._pixels))
