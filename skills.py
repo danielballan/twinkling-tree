@@ -140,6 +140,4 @@ class Rainbow(Skill):
 
     @match_crontab('30 22 * * *', timezone="America/New York")
     async def timed_goodnight(self, event):
-        # Importing this at global scope seems to trip at circular import bug at startup.
-        await self.opsdroid.send(Message(text="Going dark for the night \N{Crescent Moon}"))
         await self._controller.schedule(dark(self._pixels))
