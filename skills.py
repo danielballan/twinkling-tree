@@ -82,7 +82,6 @@ class Rainbow(Skill):
         colors = [self._channels_from_name(name) for name in ("blood red", "pine green", "ivory")]
         await self._controller.schedule(randomly_fill(self._pixels, colors))
 
-    @match_regex(r'color (?P<color_terms>.*)', case_sensitive=False)
     async def color(self, message):
         order = self._pixels.byteorder
         color_terms_raw = message.entities["color_terms"]["value"].lower().strip()
@@ -99,7 +98,11 @@ class Rainbow(Skill):
             else:
                 color_terms = color_terms_raw.split()
         colors = []
+        twinkle = 0
         for color_term in color_terms:
+            if color_term == "twinkle":
+                twinkle += 1
+                continue
             try:
                 if color_term.startswith("#"):
                     # Interpret the color term as a hex code.
@@ -113,6 +116,9 @@ class Rainbow(Skill):
                     f"I do not know the color {color_term}. Try something else if you like.")
                 return
             colors.append(channels)
+        # For each occurrence of 'twinkle', make half the lights dark
+        # at any given time.
+        colors += ([hex_to_channels("#000000", order)] * len(colors) * twinkle)
         await message.respond('OK, coloring')
         await self._controller.schedule(randomly_fill(self._pixels, colors))
 
@@ -125,19 +131,23 @@ class Rainbow(Skill):
     @match_regex(r'reboot', case_sensitive=False)
     @constrain_users(['danielballan'])
     async def reboot(self, message):
-        await message.respond("Going dark and rebooting.")
+        subprocess.Popen("Will go dark and reboot in 30 seconds.")
         await self._controller.schedule(dark(self._pixels))
-        await asyncio.sleep(2)
-        subprocess.Popen(["reboot", "now"])
+        await asyncio.sleep(30)
+        await message.respond("Going dark and rebooting.")
+        # subprocess.Popen(["reboot", "now"])
 
     @match_regex(r'shutdown', case_sensitive=False)
     @constrain_users(['danielballan'])
     async def shutdown(self, message):
-        await message.respond("Going dark and shutting down. Power-cycle to reboot.")
+        subprocess.Popen("Will go dark and shut down in 30 seconds.")
         await self._controller.schedule(dark(self._pixels))
-        await asyncio.sleep(2)
-        subprocess.Popen(["shutdown", "now"])
+        await asyncio.sleep(30)
+        await message.respond("Going dark and shutting down. Power-cycle to reboot.")
+        # subprocess.Popen(["shutdown", "now"])
 
     @match_crontab('30 22 * * *', timezone="America/New York")
     async def timed_goodnight(self, event):
         await self._controller.schedule(dark(self._pixels))
+
+    match_regex(r'(?P<color_terms>.*)', case_sensitive=False, score_factor=0.1)(color)

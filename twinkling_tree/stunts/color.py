@@ -10,7 +10,7 @@ GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 PURPLE = (200, 0, 200)
 CLASSIC_CHRISTMAS = [RED, ORANGE, GREEN, BLUE]
-BATCH_SIZE = 10  # number to change in a single write
+BATCH_SIZE = 30  # number to change in a single write
 
 
 async def randomly_fill(pixels, colors):
