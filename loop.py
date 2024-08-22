@@ -1,6 +1,7 @@
 import contextlib
 import logging
 import os
+import random
 import sys
 import threading
 import time
@@ -64,21 +65,65 @@ def solid(color):
         time.sleep(1)
 
 
+def multicolor_random(colors):
+    BATCH_SIZE = 30  # number to change in a single write
+    pixels = [(0, 0, 0)] * num_pixels
+    indexes = range(num_pixels)
+    for index in indexes:
+        pixels[index] = random.choice(colors)
+    yield pixels
+    while True:
+        for _ in range(BATCH_SIZE):
+            index = random.choice(indexes)
+            candidates = colors.copy()
+            if len(colors) > 1:
+                candidates.remove(tuple(pixels[index]))
+            pixels[index] = random.choice(candidates)
+        yield pixels
+
+
 def color_chase(color, wait):
-    for i in range(num_pixels):
-        pixels[i] = color
-        time.sleep(wait)
-        pixels.show()
-    time.sleep(0.5)
+    pixels = [(0, 0, 0)] * num_pixels
+    while True:
+        for i in range(num_pixels):
+            pixels[i] = color
+            yield pixels
+            time.sleep(wait)
+        time.sleep(0.5)
+
+
+def colorwheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if pos < 0 or pos > 255:
+        r = g = b = 0
+    elif pos < 85:
+        r = int(pos * 3)
+        g = int(255 - pos * 3)
+        b = 0
+    elif pos < 170:
+        pos -= 85
+        r = int(255 - pos * 3)
+        g = 0
+        b = int(pos * 3)
+    else:
+        pos -= 170
+        r = 0
+        g = int(pos * 3)
+        b = int(255 - pos * 3)
+    return (g, r, b)
+
 
 
 def rainbow_cycle(wait):
-    for j in range(255):
-        for i in range(num_pixels):
-            rc_index = (i * 256 // num_pixels) + j
-            pixels[i] = colorwheel(rc_index & 255)
-        pixels.show()
-        time.sleep(wait)
+    pixels = [(0, 0, 0)] * num_pixels
+    while True:
+        for j in range(255):
+            for i in range(num_pixels):
+                rc_index = (i * 256 // num_pixels) + j
+                pixels[i] = colorwheel(rc_index & 255)
+            yield pixels
+            time.sleep(wait)
 
 levels = (0.5, 1, 0.8)  # GRB
 program = dark()
@@ -141,7 +186,14 @@ class ParseError(ValueError):
 
 
 def parse_text(text):
-    tokens = (x.strip().casefold() for x in text.split(","))
+    text = text.casefold().strip()
+    if text == "dark":
+        return dark()
+    if text == "rainbow":
+        return rainbow_cycle(0)
+    # if text == "chase":
+    #     return color_chase(0)
+    tokens = (x.strip() for x in text.split(","))
     tokens = (x for x in tokens if x)
     hex_colors = []
     for token in tokens:
@@ -152,7 +204,7 @@ def parse_text(text):
     if len(hex_colors) == 1:
         return solid(hex_to_channels(hex_colors[0]))
     else:
-        raise ParseError("only one color at a time for now")
+        return multicolor_random([*map(hex_to_channels, hex_colors)])
 
 
 async def route(request):
