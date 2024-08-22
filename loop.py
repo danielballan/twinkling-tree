@@ -1,4 +1,5 @@
 import contextlib
+import logging
 import os
 import sys
 import threading
@@ -10,6 +11,10 @@ import uvicorn
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
 from starlette.routing import Route
+
+
+logging.basicConfig(level="INFO")
+logger = logging.getLogger(__name__)
 
 
 # On CircuitPlayground Express, and boards with built in status NeoPixel -> board.NEOPIXEL
@@ -47,8 +52,36 @@ def hex_to_channels(hex_code):
     return g, r, b
 
 
+def dark():
+    while True:
+        yield (0, 0, 0)
+        time.sleep(1)
+
+
+def solid(color):
+    while True:
+        yield color
+        time.sleep(1)
+
+
+def color_chase(color, wait):
+    for i in range(num_pixels):
+        pixels[i] = color
+        time.sleep(wait)
+        pixels.show()
+    time.sleep(0.5)
+
+
+def rainbow_cycle(wait):
+    for j in range(255):
+        for i in range(num_pixels):
+            rc_index = (i * 256 // num_pixels) + j
+            pixels[i] = colorwheel(rc_index & 255)
+        pixels.show()
+        time.sleep(wait)
+
 levels = (0.5, 1, 0.8)  # GRB
-colors = [(0, 0, 0)]
+program = dark()
 
 
 def correct_color(color):
@@ -63,11 +96,16 @@ shutdown = False  # used to stop draw_loop
 
 def draw_loop():
     while not shutdown:
-        if len(colors) == 1:
-            color, = colors
+        program = get_program()
+        step = next(program)
+        if isinstance(step, tuple):
+            # Solid color
+            color = step
             pixels.fill(correct_color(color))
-        else:
-            print('nope', colors)
+        if isinstance(step, list):
+            # Array of colors
+            for index, color in enumerate(step):
+                pixels[index] = correct_color(color)
         pixels.write()
 
 
@@ -81,16 +119,20 @@ def run_draw_thread():
     shutdown = Ture
     draw_thread.join()
 
-def set_colors(colors_):
-    global colors
 
-    if len(colors_) == 0:
-        colors_ = [(0, 0, 0)]
-    colors = colors_
+def set_program(program_):
+    global program
+
+    program = program_
+
+
+def get_program():
+    return program
 
 
 def set_levels(levels_):
     global levels
+
     levels = levels_
 
 
@@ -107,19 +149,22 @@ def parse_text(text):
         if hex_color is None:
             raise ParseError(repr(token))
         hex_colors.append(hex_color)
-    return [hex_to_channels(hex_color) for hex_color in hex_colors]
+    if len(hex_colors) == 1:
+        return solid(hex_to_channels(hex_colors[0]))
+    else:
+        raise ParseError("only one color at a time for now")
 
 
 async def route(request):
     async with request.form() as form:
         text = form["Body"]
-        print(form)
+        logger.info('%s %r', form["From"], form["Body"])
     try:
-        colors = parse_text(text)
+        program = parse_text(text)
     except ParseError as err:
-        print(f"Could not parse {err.args[0]}")
+        logger.exception(f"Could not parse {err.args[0]}")
     else:
-        set_colors(colors)
+        set_program(program)
     return JSONResponse({})  # TODO
 
 
@@ -1317,10 +1362,10 @@ if __name__ == "__main__":
                 while True:
                     text = input("> ")
                     try:
-                        colors = parse_text(text)
+                        program = parse_text(text)
                     except ParseError as err:
-                        print(f"Could not parse {err.args[0]}")
+                        logger.exception(f"Could not parse {err.args[0]}")
                     else:
-                        set_colors(colors)
+                        set_program(program)
 
 
