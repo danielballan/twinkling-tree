@@ -210,12 +210,13 @@ def parse_text(text):
 async def route(request):
     async with request.form() as form:
         text = form["Body"]
-        logger.info('%s %r', form["From"], form["Body"])
+        logger.info('From %s: %r', form["From"], form["Body"])
     try:
         program = parse_text(text)
     except ParseError as err:
         logger.exception(f"Could not parse {err.args[0]}")
     else:
+        logger.info("Parsed command %s", program.__name__)
         set_program(program)
     return JSONResponse({})  # TODO
 
