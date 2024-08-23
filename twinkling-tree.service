@@ -1,0 +1,15 @@
+[Unit]
+Description=Twinkling Tree SMS interface
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=root
+EnvironmentFile=/home/pi/twinkling-tree/.env
+ExecStart=/home/pi/venv/bin/python /home/pi/twinkling-tree/loop.py --headless
+
+[Install]
+WantedBy=multi-user.target
