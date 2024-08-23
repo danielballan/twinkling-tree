@@ -2,6 +2,7 @@ import contextlib
 import logging
 import os
 import random
+import re
 import sys
 import threading
 import time
@@ -26,7 +27,9 @@ pixel_pin = board.D18
 # pixel_pin = board.D18
 
 # The number of NeoPixels
-num_pixels = 50 * 8
+num_strings = 8
+string_len = 50
+num_pixels = string_len * num_strings
 
 # The order of the pixel colors - RGB or GRB. Some NeoPixels have red and green reversed!
 # For RGBW NeoPixels, simply change the ORDER to RGBW or GRBW.
@@ -65,6 +68,16 @@ def solid(color):
         time.sleep(1)
 
 
+def string_number(number):
+    "Illuminate (1-indexed) light string number"
+    pixels = [(0, 0, 0)] * num_pixels
+    light = [(255, 255, 255)] * string_len
+    pixels[string_len * (number - 1):string_len * number] = light
+    while True:
+        yield pixels
+        time.sleep(1)
+
+
 def multicolor_random(colors):
     BATCH_SIZE = 30  # number to change in a single write
     pixels = [(0, 0, 0)] * num_pixels
@@ -82,14 +95,19 @@ def multicolor_random(colors):
         yield pixels
 
 
-def color_chase(color, wait):
+def color_chase(colors, wait):
     pixels = [(0, 0, 0)] * num_pixels
+    if len(colors) == 1:
+        # After the initial iteration there is nothing to see,
+        # as the color just overwrites itself. Add black into the mix.
+        colors = [*colors, (0, 0, 0)]
     while True:
-        for i in range(num_pixels):
-            pixels[i] = color
-            yield pixels
-            time.sleep(wait)
-        time.sleep(0.5)
+        for color in colors:
+            for i in range(num_pixels):
+                pixels[i] = color
+                yield pixels
+                time.sleep(wait)
+            time.sleep(0.5)
 
 
 def colorwheel(pos):
@@ -125,13 +143,14 @@ def rainbow_cycle(wait):
             yield pixels
             time.sleep(wait)
 
-levels = (0.5, 1, 0.8)  # GRB
+levels = (0.6, 1, 0.8)  # GRB
+gamma = 2.0
 program = dark()
 
 
 def correct_color(color):
     return [
-        round(channel_level * channel_color)
+        round((channel_level * channel_color) ** 1/gamma)
         for channel_level, channel_color in zip(levels, color)
     ]
 
@@ -141,17 +160,20 @@ shutdown = False  # used to stop draw_loop
 
 def draw_loop():
     while not shutdown:
-        program = get_program()
-        step = next(program)
-        if isinstance(step, tuple):
-            # Solid color
-            color = step
-            pixels.fill(correct_color(color))
-        if isinstance(step, list):
-            # Array of colors
-            for index, color in enumerate(step):
-                pixels[index] = correct_color(color)
-        pixels.write()
+        try:
+            program = get_program()
+            step = next(program)
+            if isinstance(step, tuple):
+                # Solid color
+                color = step
+                pixels.fill(correct_color(color))
+            if isinstance(step, list):
+                # Array of colors
+                for index, color in enumerate(step):
+                    pixels[index] = correct_color(color)
+            pixels.write()
+        except Exception:
+            logger.exception("Exception raised in draw_loop")
 
 
 @contextlib.contextmanager
@@ -185,26 +207,63 @@ class ParseError(ValueError):
     pass
 
 
+HEX_COLOR = re.compile(r"^#(?:[0-9a-fA-F]{3}){1,2}$")
+LEVELS = re.compile("levels (\d\.?\d*) (\d\.?\d*) (\d\.?\d*)")
+GAMMA = re.compile("gamma (\d\.?\d*)")
+
+
+def parse_color_token(token):
+    if HEX_COLOR.match(token):
+        # token is a hex color code, like '#ff0000'
+        hex_color = token
+    else:
+        # Try parsing token as a color word (or compound word).
+        hex_color = XKCD_COLORS.get(f"xkcd:{token}")
+        if hex_color is None:
+            raise ParseError(repr(token))
+    return hex_to_channels(hex_color)
+
+
+def parse_color_text(text):
+    "Given text like 'red' or 'red, green', return list of GRB tuples."
+    tokens = (x.strip() for x in text.split(","))
+    tokens = (x for x in tokens if x)
+    return [*map(parse_color_token, tokens)]
+
+
 def parse_text(text):
+    global levels
+    global gamma
+    
     text = text.casefold().strip()
     if text == "dark":
         return dark()
     if text == "rainbow":
         return rainbow_cycle(0)
-    # if text == "chase":
-    #     return color_chase(0)
-    tokens = (x.strip() for x in text.split(","))
-    tokens = (x for x in tokens if x)
-    hex_colors = []
-    for token in tokens:
-        hex_color = XKCD_COLORS.get(f"xkcd:{token}")
-        if hex_color is None:
-            raise ParseError(repr(token))
-        hex_colors.append(hex_color)
-    if len(hex_colors) == 1:
-        return solid(hex_to_channels(hex_colors[0]))
+    if text.isnumeric():
+        return string_number(int(text))
+    if text.startswith("twinkle "):
+        colors = parse_color_text(text[len("twinkle "):])
+        return multicolor_random(colors + [(0, 0, 0)] * len(colors))
+    if text.startswith("chase "):
+        return color_chase(parse_color_text(text[len("chase "):]), 0)
+    levels_match = LEVELS.match(text)
+    if levels_match:
+        levels = tuple(float(x) for x in levels_match.groups())
+        return program  # no change in program
+    gamma_match = GAMMA.match(text)
+    if gamma_match:
+        candidate_gamma = float(gamma_match.group(1))
+        if candidate_gamma < 1:
+            raise ParseError(f"gamma value must be >=1; got {gamma}")
+        gamma = candidate_gamma
+        return program  # no change in program
+    # Interpret entire message as color word(s).
+    tokens = parse_color_text(text)
+    if len(tokens) == 1:
+        return solid(tokens[0])
     else:
-        return multicolor_random([*map(hex_to_channels, hex_colors)])
+        return multicolor_random(tokens)
 
 
 async def route(request):
