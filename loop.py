@@ -256,6 +256,8 @@ def parse_text(text):
         return rainbow_cycle(0)
     if text == "princess kate":
         return multicolor_random(parse_color_text("rose, lavender"))
+    if text == "april":
+        return multicolor_random(parse_color_text("#f48700, #e5cf8c, #a37319"))
     if text.isnumeric():
         return string_number(int(text))
     if text.startswith("twinkle "):
